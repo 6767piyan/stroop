@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>史楚普效應科學實驗室 (Stroop Task) - 滑鼠 33 題版</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0f111a;
+            color: #ffffff;
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+        .wrapper {
+            max-width: 700px;
+            margin: 60px auto;
+            padding: 40px;
+            background-color: #1a1d29;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        h1, h2 {
+            color: #4dadff;
+            margin-top: 0;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #cdcefe;
+        }
+        ul {
+            text-align: left;
+            display: inline-block;
+            background: #24293c;
+            padding: 20px 40px;
+            border-radius: 8px;
+            color: #e2e4f0;
+            line-height: 1.8;
+        }
+        .hidden {
+            display: none !important;
+        }
+        /* 提示字眼 */
+        #instruction {
+            font-size: 26px;
+            margin-bottom: 25px;
+            color: #00ffcc;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+        /* 刺激呈現區域 */
+        #stimulus-area {
+            height: 180px;
+            display: block;
+            line-height: 180px;
+            font-size: 96px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            background: #131622;
+            border-radius: 12px;
+            border: 1px solid #2d334a;
+        }
+        /* 選項按鈕區域 */
+        #options-area {
+            display: block;
+            text-align: center;
+        }
+        .option-btn {
+            display: inline-block;
+            width: 130px;
+            margin: 10px;
+            padding: 18px 0;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid #3d4465;
+            border-radius: 10px;
+            background-color: #24293c;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .option-btn:hover {
+            background-color: #4dadff;
+            border-color: #4dadff;
+            transform: translateY(-2px);
+        }
+        .sys-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 16px 45px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+            transition: all 0.2s ease;
+        }
+        .sys-btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,123,255,0.6);
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div id="start-screen">
+        <h1>史楚普效應認知實驗 (滑鼠版)</h1>
+        <p>歡迎參與本心理學認知科學實驗。本版本為<b>【滑鼠點擊作答】</b>，請依畫面上顯示的按鈕進行選擇。</p>
+        <ul>
+            <li><b>第一階段：</b>請選出文字的<b>「字形（意義）」</b>（共 33 題）</li>
+            <li><b>第二階段：</b>請選出文字的<b>「顏色」</b>（共 33 題）</li>
+            <li><b>第三階段：</b>請選出聽到的<b>「聲音意義」</b>（共 33 題）</li>
+        </ul>
+        <p style="color: #ffb74d;">⚠️ 注意：每題作答限時 3 秒，總計 99 題。請打開喇叭或配戴耳機。</p>
+        <button class="sys-btn" onclick="initGame()">開始心理學測驗</button>
+    </div>
+
+    <div id="phase-screen" class="hidden">
+        <h2 id="phase-title">階段提示</h2>
+        <p id="phase-desc" style="font-size: 18px; margin: 25px 0;"></p>
+        <button class="sys-btn" onclick="startPhase()">進入本階段</button>
+    </div>
+
+    <div id="trial-screen" class="hidden">
+        <div id="instruction">請專注</div>
+        <div id="stimulus-area">
+            <span id="stimulus-word"></span>
+        </div>
+        <div id="options-area"></div>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <h2>實驗圓滿結束！</h2>
+        <p>所有階段的刺激反應數據已採集完畢。</p>
+        <button class="sys-btn" style="background-color: #28a745; box-shadow: 0 4px 15px rgba(40,167,69,0.4);" onclick="downloadCSV()">下載完整 Excel (CSV) 數據檔</button>
+    </div>
+</div>
+
+<script>
+    // --- 實驗科學設定 ---
+    const COLORS = ['紅', '綠', '藍', '黃']; 
+    const COLOR_CODES = { '紅': '#FF4A4A', '綠': '#33FF33', '藍': '#4DA6FF', '黃': '#FFFF33' };
+    
+    const TRIALS_PER_PHASE = 33; 
+    const TRIAL_TIMEOUT_MS = 3000; 
+
+    const PHASES = [
+        { id: 1, type: 'word', name: '第一階段：判斷「字形」', desc: '請完全忽略文字的塗色與聲音，用滑鼠點擊選出【文字本身寫了什麼】。（共 33 題）' },
+        { id: 2, type: 'color', name: '第二階段：判斷「字形顏色」', desc: '請完全忽略文字的意思與聲音，用滑鼠點擊選出【文字是用什麼顏色塗上的】。（共 33 題）' },
+        { id: 3, type: 'audio', name: '第三階段：判斷「聲音」', desc: '請完全忽略螢幕上的任何字體與色彩，用滑鼠點擊選出【耳機/喇叭裡聽到的語音是什麼字】。（共 33 題）' }
+    ];
+
+    // --- 變數定義 ---
+    let currentPhaseIndex = 0;
+    let currentTrialCount = 0;
+    let synth = window.speechSynthesis;
+    let trialData = []; 
+    let trialStartTime = 0;
+    let timeoutTimer = null;
+    let currentTrialParams = null;
+    let isAcceptingResponse = false; 
+
+    function getRandomElement(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    
+    function shuffle(arr) {
+        return [...arr].sort(() => 0.5 - Math.random());
+    }
+
+    // --- 實驗控制核心 ---
+    function initGame() {
+        let unlockUtterance = new SpeechSynthesisUtterance('');
+        synth.speak(unlockUtterance);
+
+        document.getElementById('start-screen').classList.add('hidden');
+        showPhaseScreen();
+    }
+
+    function showPhaseScreen() {
+        isAcceptingResponse = false;
+        if (currentPhaseIndex >= PHASES.length) {
+            endGame();
+            return;
+        }
+        let phase = PHASES[currentPhaseIndex];
+        document.getElementById('phase-title').innerText = phase.name;
+        document.getElementById('phase-desc').innerText = phase.desc;
+        
+        document.getElementById('trial-screen').classList.add('hidden');
+        document.getElementById('phase-screen').classList.remove('hidden');
+        currentTrialCount = 0;
+    }
+
+    function startPhase() {
+        document.getElementById('phase-screen').classList.add('hidden');
+        document.getElementById('trial-screen').classList.remove('hidden');
+        nextTrial();
+    }
+
+    function nextTrial() {
+        isAcceptingResponse = false;
+        if (currentTrialCount >= TRIALS_PER_PHASE) {
+            currentPhaseIndex++;
+            showPhaseScreen();
+            return;
+        }
+
+        // 更新頂部提示與進度
+        let phaseType = PHASES[currentPhaseIndex].type;
+        if (phaseType === 'word') document.getElementById('instruction').innerText = `任務：請點擊【字面意義】 (${currentTrialCount + 1}/${TRIALS_PER_PHASE})`;
+        if (phaseType === 'color') document.getElementById('instruction').innerText = `任務：請點擊【文字顏色】 (${currentTrialCount + 1}/${TRIALS_PER_PHASE})`;
+        if (phaseType === 'audio') document.getElementById('instruction').innerText = `任務：請點擊【聽到的聲音】 (${currentTrialCount + 1}/${TRIALS_PER_PHASE})`;
+
+        const wordEl = document.getElementById('stimulus-word');
+        const optionsArea = document.getElementById('options-area');
+        wordEl.innerText = '+'; 
+        wordEl.style.color = '#ffffff';
+        optionsArea.innerHTML = '';
+
+        setTimeout(() => {
+            generateTrialStimulus();
+        }, 500);
+    }
+
+    function generateTrialStimulus() {
+        currentTrialCount++;
+        let phase = PHASES[currentPhaseIndex];
+        let wordStr, colorStr, audioStr;
+        
+        let isCongruent = Math.random() < 0.5;
+
+        if (isCongruent) {
+            wordStr = getRandomElement(COLORS);
+            colorStr = wordStr;
+            audioStr = wordStr;
+        } else {
+            wordStr = getRandomElement(COLORS);
+            let remainingForColor = COLORS.filter(c => c !== wordStr);
+            colorStr = getRandomElement(remainingForColor);
+            let remainingForAudio = COLORS.filter(c => c !== colorStr); 
+            audioStr = getRandomElement(remainingForAudio);
+        }
+
+        let targetAnswer = "";
+        if (phase.type === 'word') targetAnswer = wordStr;
+        if (phase.type === 'color') targetAnswer = colorStr;
+        if (phase.type === 'audio') targetAnswer = audioStr;
+
+        currentTrialParams = {
+            phaseId: phase.id,
+            phaseType: phase.type,
+            trialNum: currentTrialCount,
+            congruency: isCongruent ? "Congruent(一致)" : "Incongruent(衝突)",
+            word: wordStr,
+            color: colorStr,
+            audio: audioStr,
+            target: targetAnswer
+        };
+
+        const wordEl = document.getElementById('stimulus-word');
+        wordEl.innerText = wordStr;
+        wordEl.style.color = COLOR_CODES[colorStr];
+
+        let utterance = new SpeechSynthesisUtterance(audioStr);
+        utterance.lang = 'zh-TW';
+        utterance.rate = 1.3; 
+        synth.speak(utterance);
+
+        // 渲染可以用滑鼠點擊的四個按鍵
+        const optionsArea = document.getElementById('options-area');
+        let options = shuffle(COLORS);
+        
+        options.forEach(opt => {
+            let btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                if (isAcceptingResponse) handleResponse(opt);
+            };
+            optionsArea.appendChild(btn);
+        });
+
+        isAcceptingResponse = true; 
+        trialStartTime = performance.now();
+        timeoutTimer = setTimeout(() => handleResponse('Timeout'), TRIAL_TIMEOUT_MS);
+    }
+
+    function handleResponse(responseStr) {
+        isAcceptingResponse = false; 
+        let rt = performance.now() - trialStartTime;
+        clearTimeout(timeoutTimer);
+
+        let correct = 0;
+        if (responseStr !== 'Timeout') {
+            correct = (responseStr === currentTrialParams.target) ? 1 : 0;
+        } else {
+            rt = TRIAL_TIMEOUT_MS; 
+        }
+
+        trialData.push({
+            Phase: currentTrialParams.phaseId,
+            PhaseType: currentTrialParams.phaseType,
+            Trial: currentTrialParams.trialNum,
+            Congruency: currentTrialParams.congruency,
+            Word: currentTrialParams.word,
+            Color: currentTrialParams.color,
+            Audio: currentTrialParams.audio,
+            Target: currentTrialParams.target,
+            Response: responseStr,
+            Accuracy: correct,
+            RT_ms: Math.round(rt)
+        });
+
+        synth.cancel();
+
+        const wordEl = document.getElementById('stimulus-word');
+        wordEl.innerText = '';
+        document.getElementById('options-area').innerHTML = '';
+        
+        setTimeout(nextTrial, 300); 
+    }
+
+    function endGame() {
+        document.getElementById('phase-screen').classList.add('hidden');
+        document.getElementById('trial-screen').classList.add('hidden');
+        document.getElementById('end-screen').classList.remove('hidden');
+    }
+
+    function downloadCSV() {
+        let csvContent = '\uFEFF'; 
+        csvContent += "階段,任務類型,試次,刺激一致性,呈現字面,呈現顏色,播放聲音,正確目標,受試者反應,是否正確(1=是),反應時間(ms)\n";
+        
+        trialData.forEach(row => {
+            csvContent += `${row.Phase},${row.PhaseType},${row.Trial},${row.Congruency},${row.Word},${row.Color},${row.Audio},${row.Target},${row.Response},${row.Accuracy},${row.RT_ms}\n`;
+        });
+
+        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        let url = URL.createObjectURL(blob);
+        let link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Stroop_Mouse_33Trials_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>
