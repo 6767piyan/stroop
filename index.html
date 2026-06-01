@@ -306,4 +306,148 @@
 
         let phaseType = PHASES[currentPhaseIndex].type;
         if (phaseType === 'word') document.getElementById('instruction').innerText = `任務：請選出【字面意義】 (${currentTrialCount + 1}/${TRIALS_PER_PHASE})`;
-        if (phaseType === 
+        if (phaseType === 'color') document.getElementById('instruction').innerText = `任務：請選出【文字顏色】 (${currentTrialCount + 1}/${TRIALS_PER_PHASE})`;
+        if (phaseType === 'audio') document.getElementById('instruction').innerText = `任務：請選出【聽到的聲音】 (${currentTrialCount + 1}/${TRIALS_PER_PHASE})`;
+
+        const wordEl = document.getElementById('stimulus-word');
+        const optionsArea = document.getElementById('options-area');
+        wordEl.innerText = '+'; 
+        wordEl.style.color = '#ffffff';
+        optionsArea.innerHTML = '';
+
+        setTimeout(() => {
+            generateTrialStimulus();
+        }, 500);
+    }
+
+    function generateTrialStimulus() {
+        currentTrialCount++;
+        let phase = PHASES[currentPhaseIndex];
+        let wordStr, colorStr, audioStr;
+        
+        let isCongruent = Math.random() < 0.5;
+
+        if (isCongruent) {
+            wordStr = getRandomElement(COLORS);
+            colorStr = wordStr;
+            audioStr = wordStr;
+        } else {
+            wordStr = getRandomElement(COLORS);
+            let remainingForColor = COLORS.filter(c => c !== wordStr);
+            colorStr = getRandomElement(remainingForColor);
+            let remainingForAudio = COLORS.filter(c => c !== colorStr); 
+            audioStr = getRandomElement(remainingForAudio);
+        }
+
+        let targetAnswer = "";
+        if (phase.type === 'word') targetAnswer = wordStr;
+        if (phase.type === 'color') targetAnswer = colorStr;
+        if (phase.type === 'audio') targetAnswer = audioStr;
+
+        currentTrialParams = {
+            username: currentUserName, 
+            phaseId: phase.id,
+            phaseType: phase.type,
+            trialNum: currentTrialCount,
+            congruency: isCongruent ? "Congruent" : "Incongruent",
+            word: wordStr,
+            color: colorStr,
+            audio: audioStr,
+            target: targetAnswer
+        };
+
+        const wordEl = document.getElementById('stimulus-word');
+        wordEl.innerText = wordStr;
+        wordEl.style.color = COLOR_CODES[colorStr];
+
+        let utterance = new SpeechSynthesisUtterance(audioStr);
+        utterance.lang = 'zh-TW';
+        utterance.rate = 1.3; 
+        synth.speak(utterance);
+
+        const optionsArea = document.getElementById('options-area');
+        
+        COLORS.forEach(opt => {
+            let btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = `${opt} ${KEY_LABELS[opt]}`;
+            btn.onclick = () => {
+                if (isAcceptingResponse) handleResponse(opt);
+            };
+            optionsArea.appendChild(btn);
+        });
+
+        isAcceptingResponse = true; 
+        trialStartTime = performance.now();
+        timeoutTimer = setTimeout(() => handleResponse('Timeout'), TRIAL_TIMEOUT_MS);
+    }
+
+    function handleResponse(responseStr) {
+        isAcceptingResponse = false; 
+        let rt = performance.now() - trialStartTime;
+        clearTimeout(timeoutTimer);
+
+        let correct = 0;
+        if (responseStr !== 'Timeout') {
+            correct = (responseStr === currentTrialParams.target) ? 1 : 0;
+        } else {
+            rt = TRIAL_TIMEOUT_MS; 
+        }
+
+        let logItem = {
+            Username: currentTrialParams.username, 
+            Phase: currentTrialParams.phaseId,
+            PhaseType: currentTrialParams.phaseType,
+            Trial: currentTrialParams.trialNum,
+            Congruency: currentTrialParams.congruency,
+            Word: currentTrialParams.word,
+            Color: currentTrialParams.color,
+            Audio: currentTrialParams.audio,
+            Target: currentTrialParams.target,
+            Response: responseStr,
+            Accuracy: correct,
+            RT_ms: Math.round(rt),
+            Timestamp: new Date().toISOString()
+        };
+
+        trialData.push(logItem);
+        uploadToFirebase(logItem);
+
+        synth.cancel();
+
+        const wordEl = document.getElementById('stimulus-word');
+        wordEl.innerText = '';
+        document.getElementById('options-area').innerHTML = '';
+        
+        setTimeout(nextTrial, 300); 
+    }
+
+    function endGame() {
+        window.removeEventListener('keydown', handleKeyDown);
+        document.getElementById('phase-screen').classList.add('hidden');
+        document.getElementById('trial-screen').classList.add('hidden');
+        document.getElementById('end-screen').classList.remove('hidden');
+    }
+
+    function downloadCSV() {
+        let csvContent = '\uFEFF'; 
+        csvContent += "受試者代號,階段,任務類型,試次,刺激一致性,呈現字面,呈現顏色,播放聲音,正確目標,受試者反應,是否正確(1=是),反應時間(ms),紀錄時間\n";
+        
+        trialData.forEach(row => {
+            csvContent += `"${row.Username}",${row.Phase},${row.PhaseType},${row.Trial},${row.Congruency},${row.Word},${row.Color},${row.Audio},${row.Target},${row.Response},${row.Accuracy},${row.RT_ms},"${row.Timestamp}"\n`;
+        });
+
+        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        let url = URL.createObjectURL(blob);
+        let link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Stroop_CloudBackup_${currentUserName}_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>
