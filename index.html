@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stroop 聯體測試端</title>
+    <title>Stroop 強制連線測試端</title>
     <style>
         body { background: #0f111a; color: white; font-family: sans-serif; text-align: center; padding: 50px; }
-        .box { background: #1a1d29; padding: 30px; border-radius: 12px; max-width: 500px; margin: auto; }
-        button { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; margin: 10px; }
+        .box { background: #1a1d29; padding: 30px; border-radius: 12px; max-width: 500px; margin: auto; border: 2px solid #4dadff; }
+        button { background: #28a745; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; margin: 10px; font-weight: bold; }
+        #status { color: #00ffcc; margin-top: 20px; }
         #debug { background: #24293c; color: #ff8888; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; font-family: monospace; display: none; }
     </style>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyA8n5tXK2ObAWT9KU5j8I3FWtC2SWxQi9U",
@@ -24,39 +27,47 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        function sendTestData() {
-            const data = {
-                Username: "連線測試員",
-                Phase: 1,
-                PhaseType: "test",
-                Trial: 1,
-                Response: "測試點擊",
-                Accuracy: 1,
-                RT_ms: 500,
-                Timestamp: new Date().toISOString()
-            };
+        // 強制發送函式 (內建身分破防機制)
+        async function forceSendData() {
+            const statusEl = document.getElementById('status');
+            const debugEl = document.getElementById('debug');
+            statusEl.innerText = "⚡ 正在執行強制通道連線...";
+            debugEl.style.display = "none";
 
-            document.getElementById('status').innerText = "正在發送數據...";
-            
-            database.ref('stroop_results').push(data, (error) => {
-                if (error) {
-                    document.getElementById('status').innerText = "❌ 發送失敗！";
-                    document.getElementById('debug').style.display = "block";
-                    document.getElementById('debug').innerHTML = `原因：${error.message}<br><br>💡 提示：代表資料庫規則（Rules）目前還是鎖定的，請去 Firebase 後台將 .read 和 .write 改為 true。`;
-                } else {
-                    document.getElementById('status').innerText = "🎉 發送成功！資料已寫入雲端。";
-                    document.getElementById('debug').style.display = "none";
-                }
-            });
+            try {
+                // 1. 先讓瀏覽器取得臨時的合法匿名身分
+                await firebase.auth().signInAnonymously();
+                
+                // 2. 準備測試封包
+                const data = {
+                    Username: "強制通道測試員",
+                    Phase: 99,
+                    PhaseType: "ForceConnect",
+                    Trial: 1,
+                    Response: "成功破防",
+                    Accuracy: 1,
+                    RT_ms: 100,
+                    Timestamp: new Date().toISOString()
+                };
+
+                // 3. 頂著身分直接寫入
+                await database.ref('stroop_results').push(data);
+                
+                statusEl.innerText = "🎉 奇蹟發生！連線成功，資料已強行寫入雲端！";
+            } catch (error) {
+                statusEl.innerText = "❌ 強制發送依舊失敗。";
+                debugEl.style.display = "block";
+                debugEl.innerHTML = `<b>錯誤代碼:</b> ${error.code}<br><b>詳細原因:</b> ${error.message}<br><br>💡 如果看到 'auth/operation-not-allowed'，代表 Firebase 連匿名通道都關閉了。`;
+            }
         }
     </script>
 </head>
 <body>
     <div class="box">
-        <h2>測試 1：資料庫連線檢查</h2>
-        <p>點擊下方按鈕，測試資料能否傳進你的 Firebase</p>
-        <button onclick="sendTestData()">點我發送測試數據</button>
-        <h3 id="status">尚未發送</h3>
+        <h2>🔥 測試 1：強制破防通道檢查</h2>
+        <p>不用管 Firebase 網頁的轉圈圈了，直接點下方按鈕看結果：</p>
+        <button onclick="forceSendData()">強行發送測試數據</button>
+        <h3 id="status">等候指令中</h3>
         <div id="debug"></div>
     </div>
 </body>
