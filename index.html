@@ -3,70 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stroop 強制連線測試端</title>
+    <title>Stroop 新加坡節點連線測試</title>
     <style>
         body { background: #0f111a; color: white; font-family: sans-serif; text-align: center; padding: 50px; }
-        .box { background: #1a1d29; padding: 30px; border-radius: 12px; max-width: 500px; margin: auto; border: 2px solid #4dadff; }
+        .box { background: #1a1d29; padding: 30px; border-radius: 12px; max-width: 500px; margin: auto; border: 2px solid #ffcc00; }
         button { background: #28a745; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; margin: 10px; font-weight: bold; }
         #status { color: #00ffcc; margin-top: 20px; }
         #debug { background: #24293c; color: #ff8888; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; font-family: monospace; display: none; }
     </style>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
     <script>
+        // 內含你真正的新加坡 Realtime Database 網址
         const firebaseConfig = {
             apiKey: "AIzaSyA8n5tXK2ObAWT9KU5j8I3FWtC2SWxQi9U",
             authDomain: "stroop-8b787.firebaseapp.com",
-            databaseURL: "https://stroop-8b787-default-rtdb.firebaseio.com",
-            projectId: "stroop-8b787"
+            databaseURL: "https://stroop-8b787-default-rtdb.asia-southeast1.firebasedatabase.app", // 已修正為新加坡伺服器
+            projectId: "stroop-8b787",
+            storageBucket: "stroop-8b787.firebasestorage.app",
+            messagingSenderId: "880652461108",
+            appId: "1:880652461108:web:e14317f54e46454ed31661",
+            measurementId: "G-MVT8W43KLX"
         };
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // 強制發送函式 (內建身分破防機制)
-        async function forceSendData() {
+        function sendSingaporeTest() {
             const statusEl = document.getElementById('status');
             const debugEl = document.getElementById('debug');
-            statusEl.innerText = "⚡ 正在執行強制通道連線...";
+            statusEl.innerText = "正在連線新加坡伺服器...";
             debugEl.style.display = "none";
 
-            try {
-                // 1. 先讓瀏覽器取得臨時的合法匿名身分
-                await firebase.auth().signInAnonymously();
-                
-                // 2. 準備測試封包
-                const data = {
-                    Username: "強制通道測試員",
-                    Phase: 99,
-                    PhaseType: "ForceConnect",
-                    Trial: 1,
-                    Response: "成功破防",
-                    Accuracy: 1,
-                    RT_ms: 100,
-                    Timestamp: new Date().toISOString()
-                };
+            const data = {
+                Username: "新加坡連線測試員",
+                Status: "成功通電",
+                Timestamp: new Date().toISOString()
+            };
 
-                // 3. 頂著身分直接寫入
-                await database.ref('stroop_results').push(data);
-                
-                statusEl.innerText = "🎉 奇蹟發生！連線成功，資料已強行寫入雲端！";
-            } catch (error) {
-                statusEl.innerText = "❌ 強制發送依舊失敗。";
-                debugEl.style.display = "block";
-                debugEl.innerHTML = `<b>錯誤代碼:</b> ${error.code}<br><b>詳細原因:</b> ${error.message}<br><br>💡 如果看到 'auth/operation-not-allowed'，代表 Firebase 連匿名通道都關閉了。`;
-            }
+            database.ref('stroop_results').push(data, (error) => {
+                if (error) {
+                    statusEl.innerText = "❌ 連上伺服器，但被資料庫規則拒絕！";
+                    debugEl.style.display = "block";
+                    debugEl.innerHTML = `<b>詳細原因:</b> ${error.message}<br><br>💡 提示：如果顯示 Permission Denied，代表你需要去 Firebase Console 內把 Realtime Database 的 Rules 改成 true。`;
+                } else {
+                    statusEl.innerText = "🎉 成功了！資料已經順利寫入新加坡資料庫！";
+                }
+            });
         }
     </script>
 </head>
 <body>
     <div class="box">
-        <h2>🔥 測試 1：強制破防通道檢查</h2>
-        <p>不用管 Firebase 網頁的轉圈圈了，直接點下方按鈕看結果：</p>
-        <button onclick="forceSendData()">強行發送測試數據</button>
+        <h2>🇸🇬 測試：新加坡節點精準連線</h2>
+        <p>已修正資料庫專屬網址。請點擊下方按鈕測試：</p>
+        <button onclick="sendSingaporeTest()">發送測試數據</button>
         <h3 id="status">等候指令中</h3>
         <div id="debug"></div>
     </div>
