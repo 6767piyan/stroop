@@ -43,7 +43,7 @@
                 Timestamp: new Date().toISOString()
             };
 
-            // 直接發送至資料庫，不透過 Auth 模組
+            // 直接發送至資料庫，不透過 Auth 身分驗證模組
             database.ref('stroop_results').push(data, (error) => {
                 if (error) {
                     statusEl.innerText = "❌ 連上伺服器，但被資料庫規則拒絕！";
