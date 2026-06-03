@@ -3,452 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>史楚普效應科學實驗室 (Stroop Task)</title>
+    <title>Stroop 聯體測試端</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #0f111a;
-            color: #ffffff;
-            display: block;
-            margin: 0;
-            padding: 0;
-        }
-        .wrapper {
-            max-width: 750px;
-            margin: 60px auto;
-            padding: 40px;
-            background-color: #1a1d29;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-        h1, h2 {
-            color: #4dadff;
-            margin-top: 0;
-        }
-        p {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #cdcefe;
-        }
-        ul {
-            text-align: left;
-            display: inline-block;
-            background: #24293c;
-            padding: 20px 40px;
-            border-radius: 8px;
-            color: #e2e4f0;
-            line-height: 1.8;
-        }
-        .hidden {
-            display: none !important;
-        }
-        
-        .input-group {
-            margin: 25px 0;
-            background: #24293c;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px dashed #4dadff;
-        }
-        .username-input {
-            width: 280px;
-            padding: 12px 20px;
-            font-size: 18px;
-            border: 2px solid #3d4465;
-            border-radius: 8px;
-            background-color: #131622;
-            color: white;
-            text-align: center;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .username-input:focus {
-            border-color: #4dadff;
-        }
-
-        #instruction {
-            font-size: 26px;
-            margin-bottom: 25px;
-            color: #00ffcc;
-            font-weight: 600;
-            letter-spacing: 2px;
-        }
-        #stimulus-area {
-            height: 180px;
-            display: block;
-            line-height: 180px;
-            font-size: 96px;
-            font-weight: bold;
-            margin-bottom: 40px;
-            background: #131622;
-            border-radius: 12px;
-            border: 1px solid #2d334a;
-        }
-        
-        #options-area {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            max-width: 100%;
-            margin: 0 auto;
-        }
-        .option-btn {
-            flex: 1;
-            max-width: 150px;
-            padding: 18px 0;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            border: 2px solid #3d4465;
-            border-radius: 10px;
-            background-color: #24293c;
-            color: white;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-        .option-btn:hover {
-            background-color: #4dadff;
-            border-color: #4dadff;
-            transform: translateY(-2px);
-        }
-        .sys-btn {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 16px 45px;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            box-shadow: 0 4px 15px rgba(0,123,255,0.4);
-            transition: all 0.2s ease;
-        }
-        .sys-btn:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,123,255,0.6);
-        }
+        body { background: #0f111a; color: white; font-family: sans-serif; text-align: center; padding: 50px; }
+        .box { background: #1a1d29; padding: 30px; border-radius: 12px; max-width: 500px; margin: auto; }
+        button { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; margin: 10px; }
+        #debug { background: #24293c; color: #ff8888; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; font-family: monospace; display: none; }
     </style>
-
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyA8n5tXK2ObAWT9KU5j8I3FWtC2SWxQi9U",
             authDomain: "stroop-8b787.firebaseapp.com",
             databaseURL: "https://stroop-8b787-default-rtdb.firebaseio.com",
-            projectId: "stroop-8b787",
-            storageBucket: "stroop-8b787.firebasestorage.app",
-            messagingSenderId: "880652461108",
-            appId: "1:880652461108:web:e14317f54e46454ed31661",
-            measurementId: "G-MVT8W43KLX"
+            projectId: "stroop-8b787"
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        function uploadToFirebase(data) {
-            try {
-                database.ref('stroop_results').push(data);
-            } catch (error) {
-                console.error("Firebase 寫入失敗:", error);
-            }
+        function sendTestData() {
+            const data = {
+                Username: "連線測試員",
+                Phase: 1,
+                PhaseType: "test",
+                Trial: 1,
+                Response: "測試點擊",
+                Accuracy: 1,
+                RT_ms: 500,
+                Timestamp: new Date().toISOString()
+            };
+
+            document.getElementById('status').innerText = "正在發送數據...";
+            
+            database.ref('stroop_results').push(data, (error) => {
+                if (error) {
+                    document.getElementById('status').innerText = "❌ 發送失敗！";
+                    document.getElementById('debug').style.display = "block";
+                    document.getElementById('debug').innerHTML = `原因：${error.message}<br><br>💡 提示：代表資料庫規則（Rules）目前還是鎖定的，請去 Firebase 後台將 .read 和 .write 改為 true。`;
+                } else {
+                    document.getElementById('status').innerText = "🎉 發送成功！資料已寫入雲端。";
+                    document.getElementById('debug').style.display = "none";
+                }
+            });
         }
     </script>
 </head>
 <body>
-
-<div class="wrapper">
-    <div id="start-screen">
-        <h1>史楚普效應認知實驗</h1>
-        <p>歡迎參與本心理學認知科學實驗。本版本支援<b>【滑鼠點擊】</b>與<b>【鍵盤按鍵】</b>作答。</p>
-        
-        <div class="input-group">
-            <p style="color: #4dadff; font-weight: bold; margin: 0 0 10px 0;">👤 請輸入受試者姓名或編號代碼：</p>
-            <input type="text" id="username" class="username-input" placeholder="範例：林小明 或 S01" autocomplete="off">
-        </div>
-
-        <ul>
-            <li><b>第一階段：</b>請選出文字的<b>「字形（意義）」</b>（共 33 題）</li>
-            <li><b>第二階段：</b>請選出聽到的<b>「聲音意義」</b>（共 33 題）</li>
-            <li><b>第三階段：</b>請選出文字的<b>「顏色」</b>（共 33 題）</li>
-        </ul>
-        <p style="color: #00ffcc; font-weight: bold;">⌨️ 電腦快捷鍵提示（順序固定）：紅 (Q) ｜ 綠 (W) ｜ 藍 (E) ｜ 黃 (R)</p>
-        <p style="color: #ffb74d;">⚠️ 注意：聲音將比文字預先出現 300ms。每題作答限時 3 秒，總計 99 題。</p>
-        <button class="sys-btn" onclick="validateAndStart()">開始心理學測驗</button>
+    <div class="box">
+        <h2>測試 1：資料庫連線檢查</h2>
+        <p>點擊下方按鈕，測試資料能否傳進你的 Firebase</p>
+        <button onclick="sendTestData()">點我發送測試數據</button>
+        <h3 id="status">尚未發送</h3>
+        <div id="debug"></div>
     </div>
-
-    <div id="phase-screen" class="hidden">
-        <h2 id="phase-title">階段提示</h2>
-        <p id="phase-desc" style="font-size: 18px; margin: 25px 0;"></p>
-        <button class="sys-btn" onclick="startPhase()">進入本階段</button>
-    </div>
-
-    <div id="trial-screen" class="hidden">
-        <div id="instruction">請專注</div>
-        <div id="stimulus-area">
-            <span id="stimulus-word"></span>
-        </div>
-        <div id="options-area"></div>
-    </div>
-
-    <div id="end-screen" class="hidden">
-        <h2>實驗圓滿結束！</h2>
-        <p>所有階段的刺激反應數據已即時同步至雲端後台，感謝您的參與。</p>
-        <button class="sys-btn" style="background-color: #28a745; box-shadow: 0 4px 15px rgba(40,167,69,0.4);" onclick="downloadCSV()">下載本地備份 Excel (CSV) 數據檔</button>
-    </div>
-</div>
-
-<script>
-    const COLORS = ['紅', '綠', '藍', '黃']; 
-    const COLOR_CODES = { '紅': '#FF4A4A', '綠': '#33FF33', '藍': '#4DA6FF', '黃': '#FFFF33' };
-    
-    const KEY_MAP = {
-        'q': '紅', 'w': '綠', 'e': '藍', 'r': '黃',
-        'Q': '紅', 'W': '綠', 'E': '藍', 'R': '黃'
-    };
-    const KEY_LABELS = { '紅': '(Q)', '綠': '(W)', '藍': '(E)', '黃': '(R)' };
-
-    const TRIALS_PER_PHASE = 33; 
-    const TRIAL_TIMEOUT_MS = 3000; 
-
-    const PHASES = [
-        { id: 1, type: 'word', name: '第一階段：判斷「字形」', desc: '請完全忽略文字的塗色與聲音，按下鍵盤 QWER 或用滑鼠選出【文字本身寫了什麼】。（共 33 題）' },
-        { id: 2, type: 'audio', name: '第二階段：判斷「聲音」', desc: '請完全忽略螢幕上的任何字體與色彩，按下鍵盤 QWER 或用滑鼠選出【耳機/喇叭裡聽到的語音是什麼字】。（共 33 題）' },
-        { id: 3, type: 'color', name: '第三階段：判斷「字形顏色」', desc: '請完全忽略文字的意思與聲音，按下鍵盤 QWER 或用滑鼠選出【文字是用什麼顏色塗上的】。（共 33 題）' }
-    ];
-
-    let currentPhaseIndex = 0;
-    let currentTrialCount = 0;
-    let synth = window.speechSynthesis;
-    let trialData = []; 
-    let trialStartTime = 0;
-    let timeoutTimer = null;
-    let currentTrialParams = null;
-    let isAcceptingResponse = false; 
-    let currentUserName = ""; 
-
-    function getRandomElement(arr) {
-        return arr[Math.floor(Math.random() * arr.length)];
-    }
-
-    function validateAndStart() {
-        const nameInput = document.getElementById('username').value.trim();
-        if (nameInput === "") {
-            alert("請輸入受試者姓名或代號，以便後台數據分類歸檔唷！");
-            return;
-        }
-        currentUserName = nameInput; 
-        initGame();
-    }
-
-    function initGame() {
-        let unlockUtterance = new SpeechSynthesisUtterance('');
-        synth.speak(unlockUtterance);
-
-        document.getElementById('start-screen').classList.add('hidden');
-        showPhaseScreen();
-        
-        window.addEventListener('keydown', handleKeyDown);
-    }
-
-    function handleKeyDown(event) {
-        if (!isAcceptingResponse) return;
-        
-        if (KEY_MAP[event.key]) {
-            event.preventDefault(); 
-            handleResponse(KEY_MAP[event.key]);
-        }
-    }
-
-    function showPhaseScreen() {
-        isAcceptingResponse = false;
-        if (currentPhaseIndex >= PHASES.length) {
-            endGame();
-            return;
-        }
-        let phase = PHASES[currentPhaseIndex];
-        document.getElementById('phase-title').innerText = phase.name;
-        document.getElementById('phase-desc').innerText = phase.desc;
-        
-        document.getElementById('trial-screen').classList.add('hidden');
-        document.getElementById('phase-screen').classList.remove('hidden');
-        currentTrialCount = 0;
-    }
-
-    function startPhase() {
-        document.getElementById('phase-screen').classList.add('hidden');
-        document.getElementById('trial-screen').classList.remove('hidden');
-        nextTrial();
-    }
-
-    function nextTrial() {
-        isAcceptingResponse = false;
-        if (currentTrialCount >= TRIALS_PER_PHASE) {
-            currentPhaseIndex++;
-            showPhaseScreen();
-            return;
-        }
-
-        let phaseType = PHASES[currentPhaseIndex].type;
-        if (phaseType === 'word') document.getElementById('instruction').innerText = `任務：請選出【字面意義】 (${currentTrialCount + 1}/${TRIALS_PER_PHASE})`;
-        if (phaseType === 'color') document.getElementById('instruction').innerText = `任務：請選出【文字顏色】 (${currentTrialCount + 1}/${TRIALS_PER_PHASE})`;
-        if (phaseType === 'audio') document.getElementById('instruction').innerText = `任務：請選出【聽到的聲音】 (${currentTrialCount + 1}/${TRIALS_PER_PHASE})`;
-
-        const wordEl = document.getElementById('stimulus-word');
-        const optionsArea = document.getElementById('options-area');
-        wordEl.innerText = '+'; 
-        wordEl.style.color = '#ffffff';
-        optionsArea.innerHTML = '';
-
-        // 固定注視點 500ms 後，提前 300ms 進行語音與視覺刺激的生成與播放流程
-        setTimeout(() => {
-            prepareAndPlayStimulus();
-        }, 500);
-    }
-
-    function prepareAndPlayStimulus() {
-        currentTrialCount++;
-        let phase = PHASES[currentPhaseIndex];
-        let wordStr, colorStr, audioStr;
-        
-        let isCongruent = Math.random() < 0.5;
-
-        if (isCongruent) {
-            wordStr = getRandomElement(COLORS);
-            colorStr = wordStr;
-            audioStr = wordStr;
-        } else {
-            wordStr = getRandomElement(COLORS);
-            let remainingForColor = COLORS.filter(c => c !== wordStr);
-            colorStr = getRandomElement(remainingForColor);
-            let remainingForAudio = COLORS.filter(c => c !== colorStr); 
-            audioStr = getRandomElement(remainingForAudio);
-        }
-
-        let targetAnswer = "";
-        if (phase.type === 'word') targetAnswer = wordStr;
-        if (phase.type === 'color') targetAnswer = colorStr;
-        if (phase.type === 'audio') targetAnswer = audioStr;
-
-        currentTrialParams = {
-            username: currentUserName, 
-            phaseId: phase.id,
-            phaseType: phase.type,
-            trialNum: currentTrialCount,
-            congruency: isCongruent ? "Congruent" : "Incongruent",
-            word: wordStr,
-            color: colorStr,
-            audio: audioStr,
-            target: targetAnswer
-        };
-
-        // 🔊 1. 立即觸發語音：配置大聲、快速、清晰的發音參數
-        let utterance = new SpeechSynthesisUtterance(audioStr);
-        utterance.lang = 'zh-TW';
-        utterance.volume = 1.0; // 最大音量
-        utterance.rate = 1.4;   // 加快語速，避免拖音顯得遲鈍
-        utterance.pitch = 1.1;  // 微幅調高音調使其更清脆
-        synth.speak(utterance);
-
-        // 👁️ 2. 延遲 300ms 後，文字再呈現在螢幕上並開啟答題與計時
-        setTimeout(() => {
-            const wordEl = document.getElementById('stimulus-word');
-            wordEl.innerText = currentTrialParams.word;
-            wordEl.style.color = COLOR_CODES[currentTrialParams.color];
-
-            const optionsArea = document.getElementById('options-area');
-            COLORS.forEach(opt => {
-                let btn = document.createElement('button');
-                btn.className = 'option-btn';
-                btn.innerText = `${opt} ${KEY_LABELS[opt]}`;
-                btn.onclick = () => {
-                    if (isAcceptingResponse) handleResponse(opt);
-                };
-                optionsArea.appendChild(btn);
-            });
-
-            isAcceptingResponse = true; 
-            trialStartTime = performance.now(); // 從文字呈現開始精確計算 RT
-            timeoutTimer = setTimeout(() => handleResponse('Timeout'), TRIAL_TIMEOUT_MS);
-        }, 300); // 聲音早於題目 300ms 出現
-    }
-
-    function handleResponse(responseStr) {
-        isAcceptingResponse = false; 
-        let rt = performance.now() - trialStartTime;
-        clearTimeout(timeoutTimer);
-
-        let correct = 0;
-        if (responseStr !== 'Timeout') {
-            correct = (responseStr === currentTrialParams.target) ? 1 : 0;
-        } else {
-            rt = TRIAL_TIMEOUT_MS; 
-        }
-
-        let logItem = {
-            Username: currentTrialParams.username, 
-            Phase: currentTrialParams.phaseId,
-            PhaseType: currentTrialParams.phaseType,
-            Trial: currentTrialParams.trialNum,
-            Congruency: currentTrialParams.congruency,
-            Word: currentTrialParams.word,
-            Color: currentTrialParams.color,
-            Audio: currentTrialParams.audio,
-            Target: currentTrialParams.target,
-            Response: responseStr,
-            Accuracy: correct,
-            RT_ms: Math.round(rt),
-            Timestamp: new Date().toISOString()
-        };
-
-        trialData.push(logItem);
-        uploadToFirebase(logItem);
-
-        synth.cancel();
-
-        const wordEl = document.getElementById('stimulus-word');
-        wordEl.innerText = '';
-        document.getElementById('options-area').innerHTML = '';
-        
-        setTimeout(nextTrial, 300); 
-    }
-
-    function endGame() {
-        window.removeEventListener('keydown', handleKeyDown);
-        document.getElementById('phase-screen').classList.add('hidden');
-        document.getElementById('trial-screen').classList.add('hidden');
-        document.getElementById('end-screen').classList.remove('hidden');
-    }
-
-    function downloadCSV() {
-        let csvContent = '\uFEFF'; 
-        csvContent += "受試者代號,階段,任務類型,試次,刺激一致性,呈現字面,呈現顏色,播放聲音,正確目標,受試者反應,是否正確(1=是),反應時間(ms),紀錄時間\n";
-        
-        trialData.forEach(row => {
-            csvContent += `"${row.Username}",${row.Phase},${row.PhaseType},${row.Trial},${row.Congruency},${row.Word},${row.Color},${row.Audio},${row.Target},${row.Response},${row.Accuracy},${row.RT_ms},"${row.Timestamp}"\n`;
-        });
-
-        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        let url = URL.createObjectURL(blob);
-        let link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Stroop_Backup_${currentUserName}_${new Date().toISOString().slice(0,10)}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-</script>
-
 </body>
 </html>
