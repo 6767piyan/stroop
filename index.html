@@ -16,11 +16,11 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
     <script>
-        // 內含你真正的新加坡 Realtime Database 網址
+        // 內含你真正的新加坡 Realtime Database 網址與憑證
         const firebaseConfig = {
             apiKey: "AIzaSyA8n5tXK2ObAWT9KU5j8I3FWtC2SWxQi9U",
             authDomain: "stroop-8b787.firebaseapp.com",
-            databaseURL: "https://stroop-8b787-default-rtdb.asia-southeast1.firebasedatabase.app", // 已修正為新加坡伺服器
+            databaseURL: "https://stroop-8b787-default-rtdb.asia-southeast1.firebasedatabase.app", // 這裡已修正為新加坡
             projectId: "stroop-8b787",
             storageBucket: "stroop-8b787.firebasestorage.app",
             messagingSenderId: "880652461108",
@@ -43,6 +43,7 @@
                 Timestamp: new Date().toISOString()
             };
 
+            // 直接發送至資料庫，不透過 Auth 模組
             database.ref('stroop_results').push(data, (error) => {
                 if (error) {
                     statusEl.innerText = "❌ 連上伺服器，但被資料庫規則拒絕！";
@@ -58,7 +59,7 @@
 <body>
     <div class="box">
         <h2>🇸🇬 測試：新加坡節點精準連線</h2>
-        <p>已修正資料庫專屬網址。請點擊下方按鈕測試：</p>
+        <p>已移除非必要的驗證功能，改用純資料庫連線。請點擊按鈕：</p>
         <button onclick="sendSingaporeTest()">發送測試數據</button>
         <h3 id="status">等候指令中</h3>
         <div id="debug"></div>
